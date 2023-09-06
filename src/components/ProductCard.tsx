@@ -39,7 +39,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           className="h-64 object-cover"
         />
         <button
-          className="absolute top-3 right-3"
+          className="absolute top-3 right-3 btn btn-ghost btn-circle"
           onClick={likeButtonClickHandler}
         >
           <svg
