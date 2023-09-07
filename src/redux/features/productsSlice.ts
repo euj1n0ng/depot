@@ -1,4 +1,5 @@
-import { Product } from "@prisma/client";
+import { Web5 } from "@tbd54566975/web5"
+import { Product } from "@prisma/client"
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit"
 
 type InitialState = {
@@ -19,23 +20,80 @@ const initialState = {
 export const fetchProducts = createAsyncThunk("products/fetchProducts", async () => {
   const response =  await fetch("/api/products")
   const products = await response.json()
-  return products.map((product: any) => {
+
+  const { web5, did: myDid } = await Web5.connect()
+  const { records } = await web5.dwn.records.query({
+    message: {
+      filter: {
+        schema: "http://depot-schema-registry.org/preference",
+        dataFormat: "application/json",
+      },
+    },
+  })
+
+  return Promise.all(products.map(async (product: any) => {
+    let liked = false
+
+    if (records) {
+      for (const record of records) {
+        const data = await record.data.json()
+        if (data.productId === product.id) liked = true
+      }
+    }
+
     return {
-      liked: false,
+      liked,
       ...product
     }
+  }))
+})
+
+export const toggleLike = createAsyncThunk("products/toggleLike", async (id: string) => {
+  const { web5, did: myDid } = await Web5.connect()
+
+  const { records } = await web5.dwn.records.query({
+    message: {
+      filter: {
+        schema: "http://depot-schema-registry.org/preference",
+        dataFormat: "application/json",
+      },
+    },
   })
+
+  let liked = true
+  if (records) {
+    for (const record of records) {
+      const data = await record.data.json()
+      
+      if (data.productId === id) {
+        await web5.dwn.records.delete({
+          message: {
+            recordId: record.id,
+          },
+        })
+        liked = false
+        break
+      }
+    }
+  }
+
+  if (liked) {
+    await web5.dwn.records.create({
+      data: { productId: id },
+      message: {
+        schema: "http://depot-schema-registry.org/preference",
+        dataFormat: "application/json",
+      },
+    })
+  }
+
+  return id
 })
 
 export const productsSlice = createSlice({
   name: "products",
   initialState,
-  reducers: {
-    toggleLike: (state, action: PayloadAction<string>) => {
-      const index = state.products.findIndex(product => product.id === action.payload)
-      state.products[index].liked = !state.products[index].liked
-    },
-  },
+  reducers: {},
   extraReducers(builder) {
     builder
       .addCase(fetchProducts.pending, (state) => {
@@ -49,8 +107,11 @@ export const productsSlice = createSlice({
         state.isLoading = false
         state.error = action.error.message
       })
+      .addCase(toggleLike.fulfilled, (state, action) => {
+        const index = state.products.findIndex(product => product.id === action.payload)
+        state.products[index].liked = !state.products[index].liked
+      })
   },
 })
 
-export const { toggleLike } = productsSlice.actions
 export default productsSlice.reducer
