@@ -1,11 +1,12 @@
 "use client"
+
 import { Product } from "@prisma/client"
-import Link from "next/link";
-import Image from "next/image";
-import PriceTag from "./PriceTag";
+import Link from "next/link"
+import Image from "next/image"
+import PriceTag from "./PriceTag"
 import { useDispatch } from "react-redux"
 import { AppDispatch } from "@/redux/store"
-import { toggleLike } from "@/redux/features/productsSlice";
+import { toggleLike } from "@/redux/features/productsSlice"
 
 interface ProductCardProps {
   product: Product & { liked: boolean };

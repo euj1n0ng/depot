@@ -1,6 +1,6 @@
 import { Web5 } from "@tbd54566975/web5"
 import { Product } from "@prisma/client"
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit"
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 
 type InitialState = {
   products: ProductState[];
