@@ -1,8 +1,9 @@
-import { ReduxProvider } from "@/redux/provider"
 import "./globals.css"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import SessionProvider from "./SessionProvider"
+import { ReduxProvider } from "@/redux/provider"
+import { ConfigureProtocol } from "./ConfigureProtocol"
 import Navbar from "./Navbar/Navbar"
 import Footer from "./Footer"
 
@@ -23,11 +24,13 @@ export default function RootLayout({
       <body className={inter.className}>
         <SessionProvider>
           <ReduxProvider>
-            <Navbar />
-            <main className="p-4 max-w-7xl m-auto min-w-[300px]">
-              {children}
-            </main>
-            <Footer />
+            <ConfigureProtocol>
+              <Navbar />
+              <main className="p-4 max-w-7xl m-auto min-w-[300px]">
+                {children}
+              </main>
+              <Footer />
+            </ConfigureProtocol>
           </ReduxProvider>
         </SessionProvider>
       </body>

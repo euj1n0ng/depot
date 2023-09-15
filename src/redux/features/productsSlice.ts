@@ -1,6 +1,7 @@
-import { Web5 } from "@tbd54566975/web5"
+import { Web5 } from "@web5/api"
 import { Product } from "@prisma/client"
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
+import { depotProtocolDefinition } from "@/app/ConfigureProtocol";
 
 type InitialState = {
   products: ProductState[];
@@ -25,27 +26,29 @@ export const fetchProducts = createAsyncThunk("products/fetchProducts", async ()
   const { records } = await web5.dwn.records.query({
     message: {
       filter: {
-        schema: "http://depot-schema-registry.org/preference",
+        protocol: depotProtocolDefinition.protocol,
+        schema: depotProtocolDefinition.types.preference.schema,
         dataFormat: "application/json",
       },
     },
   })
 
-  return Promise.all(products.map(async (product: any) => {
-    let liked = false
-
-    if (records) {
-      for (const record of records) {
-        const data = await record.data.json()
-        if (data.productId === product.id) liked = true
-      }
+  const likedProductIds: string[] = []
+  if (records) {
+    for (const record of records) {
+      const data = await record.data.json()
+      likedProductIds.push(data.productId)
     }
+  }
+
+  return products.map((product: Product) => {
+    const liked = likedProductIds.includes(product.id)
 
     return {
       liked,
       ...product
     }
-  }))
+  })
 })
 
 export const toggleLike = createAsyncThunk("products/toggleLike", async (id: string) => {
@@ -54,7 +57,8 @@ export const toggleLike = createAsyncThunk("products/toggleLike", async (id: str
   const { records } = await web5.dwn.records.query({
     message: {
       filter: {
-        schema: "http://depot-schema-registry.org/preference",
+        protocol: depotProtocolDefinition.protocol,
+        schema: depotProtocolDefinition.types.preference.schema,
         dataFormat: "application/json",
       },
     },
@@ -66,25 +70,26 @@ export const toggleLike = createAsyncThunk("products/toggleLike", async (id: str
       const data = await record.data.json()
       
       if (data.productId === id) {
-        await web5.dwn.records.delete({
-          message: {
-            recordId: record.id,
-          },
-        })
+        await record.delete()
         liked = false
+        
         break
       }
     }
   }
 
   if (liked) {
-    await web5.dwn.records.create({
+    const { record } = await web5.dwn.records.create({
       data: { productId: id },
       message: {
-        schema: "http://depot-schema-registry.org/preference",
+        protocol: depotProtocolDefinition.protocol,
+        protocolPath: "preference",
+        schema: depotProtocolDefinition.types.preference.schema,
         dataFormat: "application/json",
       },
     })
+    // const { status } = await record?.send(otherDid)
+    // console.log(status)
   }
 
   return id
