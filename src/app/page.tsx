@@ -9,18 +9,22 @@ import { AppDispatch, useAppSelector } from "@/redux/store"
 import { useEffect } from "react"
 import LoadingPage from "./loading"
 import ErrorPage from "./error"
+import { useSession } from "next-auth/react"
 
 export default function Home() {
+  const { data: session } = useSession()
+
   const dispatch = useDispatch<AppDispatch>()
   const products = useAppSelector(state => state.productsReducer.products)
   const isLoading = useAppSelector(state => state.productsReducer.isLoading)
   const error = useAppSelector(state => state.productsReducer.error)
 
   useEffect(() => {
-    if (products.length == 0) {
-      dispatch(fetchProducts())
+    if (products.length === 0) {
+      const loggedIn = session ? true : false
+      dispatch(fetchProducts(loggedIn))
     }
-  }, [dispatch, products.length])
+  }, [dispatch, products.length, session])
 
   if (isLoading) {
     return <LoadingPage />

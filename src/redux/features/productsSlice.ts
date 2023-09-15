@@ -18,31 +18,38 @@ const initialState = {
   isLoading: false,
 } as InitialState
 
-export const fetchProducts = createAsyncThunk("products/fetchProducts", async () => {
+export const fetchProducts = createAsyncThunk("products/fetchProducts", async (loggedIn: boolean) => {
   const response =  await fetch("/api/products")
   const products = await response.json()
 
-  const { web5, did: myDid } = await Web5.connect()
-  const { records } = await web5.dwn.records.query({
-    message: {
-      filter: {
-        protocol: depotProtocolDefinition.protocol,
-        schema: depotProtocolDefinition.types.preference.schema,
-        dataFormat: "application/json",
-      },
-    },
-  })
-
   const likedProductIds: string[] = []
-  if (records) {
-    for (const record of records) {
-      const data = await record.data.json()
-      likedProductIds.push(data.productId)
+
+  if (loggedIn) {
+    const { web5, did: myDid } = await Web5.connect()
+  
+    const { records } = await web5.dwn.records.query({
+      message: {
+        filter: {
+          protocol: depotProtocolDefinition.protocol,
+          schema: depotProtocolDefinition.types.preference.schema,
+          dataFormat: "application/json",
+        },
+      },
+    })
+  
+    if (records) {
+      for (const record of records) {
+        const data = await record.data.json()
+        likedProductIds.push(data.productId)
+      }
     }
   }
 
   return products.map((product: Product) => {
-    const liked = likedProductIds.includes(product.id)
+    let liked = false
+    if (likedProductIds.length > 0) {
+      liked = likedProductIds.includes(product.id)
+    }
 
     return {
       liked,
