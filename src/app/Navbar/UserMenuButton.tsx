@@ -4,6 +4,7 @@ import profilePicPlaceholder from "@/assets/profile-pic-placeholder.png"
 import { Session } from "next-auth"
 import Image from "next/image"
 import { signIn, signOut } from "next-auth/react"
+import Link from "next/link"
 
 interface UserMenuButtonProps {
   session: Session | null
@@ -52,6 +53,11 @@ export default function UserMenuButton({ session }: UserMenuButtonProps) {
             <button onClick={() => signIn()}>Sign In</button>
           )}
         </li>
+        {session &&
+          <li>
+            <Link href="/show-preference-out">Show Preference Out</Link>
+          </li>
+        }
       </ul>
     </div>
   )

@@ -1,7 +1,7 @@
 import { Web5 } from "@web5/api"
 import { Product } from "@prisma/client"
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
-import { depotProtocolDefinition } from "@/app/ConfigureProtocol";
+import { depotProtocolDefinition } from "@/app/ConfigureProtocol"
 
 type InitialState = {
   products: ProductState[];
@@ -26,6 +26,7 @@ export const fetchProducts = createAsyncThunk("products/fetchProducts", async (l
 
   if (loggedIn) {
     const { web5, did: myDid } = await Web5.connect()
+    console.log(myDid)
   
     const { records } = await web5.dwn.records.query({
       message: {
@@ -33,9 +34,11 @@ export const fetchProducts = createAsyncThunk("products/fetchProducts", async (l
           protocol: depotProtocolDefinition.protocol,
           schema: depotProtocolDefinition.types.preference.schema,
           dataFormat: "application/json",
+          recipient: myDid,
         },
       },
     })
+    console.log(records)
   
     if (records) {
       for (const record of records) {
@@ -67,6 +70,7 @@ export const toggleLike = createAsyncThunk("products/toggleLike", async (id: str
         protocol: depotProtocolDefinition.protocol,
         schema: depotProtocolDefinition.types.preference.schema,
         dataFormat: "application/json",
+        recipient: myDid,
       },
     },
   })
@@ -86,17 +90,34 @@ export const toggleLike = createAsyncThunk("products/toggleLike", async (id: str
   }
 
   if (liked) {
-    const { record } = await web5.dwn.records.create({
+    const { record: preference } = await web5.dwn.records.create({
       data: { productId: id },
       message: {
         protocol: depotProtocolDefinition.protocol,
         protocolPath: "preference",
         schema: depotProtocolDefinition.types.preference.schema,
+        recipient: myDid,
         dataFormat: "application/json",
       },
     })
-    // const { status } = await record?.send(otherDid)
-    // console.log(status)
+    const { records } = await web5.dwn.records.query({
+      message: {
+        filter: {
+          protocol: depotProtocolDefinition.protocol,
+          schema: depotProtocolDefinition.types.presentee.schema,
+          dataFormat: "application/json",
+          recipient: myDid,
+        },
+      },
+    })
+    if (records) {
+      for (const record of records) {
+        const data = await record.data.json()
+
+        const { status } = await preference?.send(data.presentee)
+        console.log(status)
+      }
+    }
   }
 
   return id

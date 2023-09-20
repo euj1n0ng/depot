@@ -7,11 +7,15 @@ import ErrorPage from "./error"
 import { useSession } from "next-auth/react"
 
 export const depotProtocolDefinition = {
-  protocol: "https://depot.com/protocol",
+  protocol: "https://depot.com",
   published: true,
   types: {
     preference: {
-      schema: "https://depot.com/protocol/preference",
+      schema: "https://depot.com/schemas/preference",
+      dataFormats: ["application/json"],
+    },
+    presentee: {
+      schema: "https://depot.com/schemas/presentee",
       dataFormats: ["application/json"],
     },
   },
@@ -34,6 +38,24 @@ export const depotProtocolDefinition = {
         },
       ],
     },
+    presentee: {
+      $actions: [
+        {
+          who: "anyone",
+          can: "write",
+        },
+        {
+          who: "author",
+          of: "presentee",
+          can: "read",
+        },
+        {
+          who: "recipient",
+          of: "presentee",
+          can: "read",
+        },
+      ],
+    },
   },
 }
 
@@ -50,7 +72,7 @@ export function ConfigureProtocol({ children }: { children: React.ReactNode }) {
           web5.dwn.protocols.query({
             message: {
               filter: {
-                protocol: "https://depot.com/protocol",
+                protocol: depotProtocolDefinition.protocol,
               },
             },
           })
